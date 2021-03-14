@@ -92,6 +92,9 @@ namespace jDamnSmallRouter {
 						available: available,
 						routeFunction403: routeFunction403
 					} );
+					this._routes.sort(
+						( a, b ) => ( ( a.weight > b.weight ) ? -1 : ( ( b.weight > a.weight ) ? 1 : 0 ) )
+					);
 					returnValue = true;
 				}
 			}
