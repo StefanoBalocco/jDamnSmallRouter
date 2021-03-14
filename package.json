@@ -1,0 +1,30 @@
+{
+  "name": "jdamnsmallmrouter",
+  "description": "Damn small hash router",
+  "main": "jDamnSmallRouter.min.js",
+  "types": "jDamnSmallRouter.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/StefanoBalocco/jDamnSmallRouter.git"
+  },
+  "version": "1.0.0",
+  "keywords": [
+    "hash router",
+    "client-side router",
+    "spa router"
+  ],
+  "author": "Stefano Balocco <stefano.balocco@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/StefanoBalocco/jDamnSmallRouter/issues"
+  },
+  "homepage": "https://github.com/StefanoBalocco/jDamnSmallRouter",
+  "dependencies": {},
+  "scripts": {
+    "build": "node_modules/typescript/bin/tsc && node_modules/terser/bin/terser jDamnSmallRouter.js -o jDamnSmallRouter.min.js -m -c --mangle-props regex=/^_/"
+  },
+  "devDependencies": {
+    "terser": "^5.6.0",
+    "typescript": "4"
+  }
+}
