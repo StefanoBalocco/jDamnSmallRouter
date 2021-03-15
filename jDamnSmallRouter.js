@@ -97,6 +97,9 @@ var jDamnSmallRouter;
             if ('#' + path != window.location.hash) {
                 window.location.hash = '#' + path;
             }
+            return this.Route(path);
+        }
+        async Route(path) {
             let routeFunction = undefined;
             let routePath = '';
             for (const route of this._routes) {

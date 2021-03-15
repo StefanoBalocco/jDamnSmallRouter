@@ -120,6 +120,10 @@ namespace jDamnSmallRouter {
 			if( '#' + path != window.location.hash ) {
 				window.location.hash = '#' + path;
 			}
+			return this.Route( path );
+		}
+
+		public async Route( path: string ) {
 			let routeFunction: ( RouteFunction | undefined ) = undefined;
 			let routePath: string = '';
 			for( const route of this._routes ) {
