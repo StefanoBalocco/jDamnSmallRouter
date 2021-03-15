@@ -30,7 +30,7 @@ namespace jDamnSmallRouter {
 		private _routeFunction404: ( RouteFunction | undefined ) = undefined;
 
 		public constructor() {
-			window.addEventListener( "hashchange", this.HashChanged );
+			window.addEventListener( "hashchange", this.CheckHash );
 		}
 
 		public RouteSpecialAdd( code: number, routeFunction: RouteFunction ) {
@@ -116,22 +116,24 @@ namespace jDamnSmallRouter {
 			return returnValue;
 		}
 
-		private async HashChanged() {
-			let hash = ( window.location.hash.startsWith( '#' ) ? window.location.hash.substr( 1 ) : '' );
+		public async Trigger( path: string ) {
+			if( '#' + path != window.location.hash ) {
+				window.location.hash = '#' + path;
+			}
 			let routeFunction: ( RouteFunction | undefined ) = undefined;
-			let path: string = '';
+			let routePath: string = '';
 			for( const route of this._routes ) {
-				if( route.match.exec( hash ) ) {
-					path = route.path;
+				if( route.match.exec( path ) ) {
+					routePath = route.path;
 					let available: boolean = true;
 					if( route.available ) {
 						available = false;
 						if( 'function' === typeof route.available ) {
 							if( 'AsyncFunction' === route.available.constructor.name ) {
-								available = await route.available( route.path, hash );
+								available = await route.available( routePath, path );
 							} else {
 								// @ts-ignore
-								available = route.available( route.path, hash );
+								available = route.available( routePath, path );
 							}
 						}
 					}
@@ -152,11 +154,15 @@ namespace jDamnSmallRouter {
 			}
 			if( routeFunction && ( 'function' === typeof routeFunction ) ) {
 				if( 'AsyncFunction' === routeFunction.constructor.name ) {
-					await routeFunction( path, hash );
+					await routeFunction( routePath, path );
 				} else {
-					routeFunction( path, hash );
+					routeFunction( routePath, path );
 				}
 			}
+		}
+
+		public async CheckHash() {
+			return this.Trigger( ( window.location.hash.startsWith( '#' ) ? window.location.hash.substr( 1 ) : '' ) );
 		}
 	}
 }

@@ -16,7 +16,8 @@ declare namespace jDamnSmallRouter {
         RouteSpecialAdd(code: number, routeFunction: RouteFunction): boolean;
         RouteAdd(path: string, routeFunction: RouteFunction, available?: CheckAvailability, routeFunction403?: RouteFunction): boolean;
         RouteDel(path: string): boolean;
-        private HashChanged;
+        Trigger(path: string): Promise<void>;
+        CheckHash(): Promise<void>;
     }
     export {};
 }

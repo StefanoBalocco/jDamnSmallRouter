@@ -12,7 +12,7 @@ var jDamnSmallRouter;
             this._routes = [];
             this._routeFunction403 = undefined;
             this._routeFunction404 = undefined;
-            window.addEventListener("hashchange", this.HashChanged);
+            window.addEventListener("hashchange", this.CheckHash);
         }
         RouteSpecialAdd(code, routeFunction) {
             let returnValue = false;
@@ -72,6 +72,7 @@ var jDamnSmallRouter;
                         available: available,
                         routeFunction403: routeFunction403
                     });
+                    this._routes.sort((a, b) => ((a.weight > b.weight) ? -1 : ((b.weight > a.weight) ? 1 : 0)));
                     returnValue = true;
                 }
             }
@@ -92,22 +93,24 @@ var jDamnSmallRouter;
             }
             return returnValue;
         }
-        async HashChanged() {
-            let hash = (window.location.hash.startsWith('#') ? window.location.hash.substr(1) : '');
+        async Trigger(path) {
+            if ('#' + path != window.location.hash) {
+                window.location.hash = '#' + path;
+            }
             let routeFunction = undefined;
-            let path = '';
+            let routePath = '';
             for (const route of this._routes) {
-                if (route.match.exec(hash)) {
-                    path = route.path;
+                if (route.match.exec(path)) {
+                    routePath = route.path;
                     let available = true;
                     if (route.available) {
                         available = false;
                         if ('function' === typeof route.available) {
                             if ('AsyncFunction' === route.available.constructor.name) {
-                                available = await route.available(route.path, hash);
+                                available = await route.available(routePath, path);
                             }
                             else {
-                                available = route.available(route.path, hash);
+                                available = route.available(routePath, path);
                             }
                         }
                     }
@@ -130,12 +133,15 @@ var jDamnSmallRouter;
             }
             if (routeFunction && ('function' === typeof routeFunction)) {
                 if ('AsyncFunction' === routeFunction.constructor.name) {
-                    await routeFunction(path, hash);
+                    await routeFunction(routePath, path);
                 }
                 else {
-                    routeFunction(path, hash);
+                    routeFunction(routePath, path);
                 }
             }
+        }
+        async CheckHash() {
+            return this.Trigger((window.location.hash.startsWith('#') ? window.location.hash.substr(1) : ''));
         }
     }
 })(jDamnSmallRouter || (jDamnSmallRouter = {}));
