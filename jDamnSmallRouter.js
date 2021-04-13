@@ -58,6 +58,9 @@ var jDamnSmallRouter;
                             returnValue += 'a-zA-Z';
                             break;
                         }
+                        default: {
+                            returnValue += '\\w';
+                        }
                     }
                     returnValue += ']+)';
                     return (returnValue);
@@ -100,20 +103,22 @@ var jDamnSmallRouter;
             return this.Route(path);
         }
         async Route(path) {
+            var _a, _b, _c, _d;
             let routeFunction = undefined;
             let routePath = '';
+            let result = null;
             for (const route of this._routes) {
-                if (route.match.exec(path)) {
+                if ((result = route.match.exec(path))) {
                     routePath = route.path;
                     let available = true;
                     if (route.available) {
                         available = false;
                         if ('function' === typeof route.available) {
                             if ('AsyncFunction' === route.available.constructor.name) {
-                                available = await route.available(routePath, path);
+                                available = await route.available(routePath, path, ((_a = result.groups) !== null && _a !== void 0 ? _a : {}));
                             }
                             else {
-                                available = route.available(routePath, path);
+                                available = route.available(routePath, path, ((_b = result.groups) !== null && _b !== void 0 ? _b : {}));
                             }
                         }
                     }
@@ -136,10 +141,10 @@ var jDamnSmallRouter;
             }
             if (routeFunction && ('function' === typeof routeFunction)) {
                 if ('AsyncFunction' === routeFunction.constructor.name) {
-                    await routeFunction(routePath, path);
+                    await routeFunction(routePath, path, ((_c = result === null || result === void 0 ? void 0 : result.groups) !== null && _c !== void 0 ? _c : {}));
                 }
                 else {
-                    routeFunction(routePath, path);
+                    routeFunction(routePath, path, ((_d = result === null || result === void 0 ? void 0 : result.groups) !== null && _d !== void 0 ? _d : {}));
                 }
             }
         }

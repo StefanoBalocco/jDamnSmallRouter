@@ -2,11 +2,11 @@
 
 namespace jDamnSmallRouter {
 	interface CheckAvailability {
-		( path: string, hashPath: string ): ( boolean | Promise<boolean> )
+		( path: string, hashPath: string, params?: { [ key: string ]: string } ): ( boolean | Promise<boolean> )
 	}
 
 	interface RouteFunction {
-		( path: string, hashPath: string ): ( void | Promise<void> )
+		( path: string, hashPath: string, params?: { [ key: string ]: string } ): ( void | Promise<void> )
 	}
 
 	type Route = {
@@ -78,6 +78,9 @@ namespace jDamnSmallRouter {
 								returnValue += 'a-zA-Z';
 								break;
 							}
+							default: {
+								returnValue += '\\w';
+							}
 						}
 						returnValue += ']+)';
 						return ( returnValue );
@@ -126,18 +129,19 @@ namespace jDamnSmallRouter {
 		public async Route( path: string ) {
 			let routeFunction: ( RouteFunction | undefined ) = undefined;
 			let routePath: string = '';
+			let result: ( RegExpExecArray | null ) = null;
 			for( const route of this._routes ) {
-				if( route.match.exec( path ) ) {
+				if( ( result = route.match.exec( path ) ) ) {
 					routePath = route.path;
 					let available: boolean = true;
 					if( route.available ) {
 						available = false;
 						if( 'function' === typeof route.available ) {
 							if( 'AsyncFunction' === route.available.constructor.name ) {
-								available = await route.available( routePath, path );
+								available = await route.available( routePath, path, ( result.groups ?? {} ) );
 							} else {
 								// @ts-ignore
-								available = route.available( routePath, path );
+								available = route.available( routePath, path, ( result.groups ?? {} ) );
 							}
 						}
 					}
@@ -158,9 +162,9 @@ namespace jDamnSmallRouter {
 			}
 			if( routeFunction && ( 'function' === typeof routeFunction ) ) {
 				if( 'AsyncFunction' === routeFunction.constructor.name ) {
-					await routeFunction( routePath, path );
+					await routeFunction( routePath, path, ( result?.groups ?? {} ) );
 				} else {
-					routeFunction( routePath, path );
+					routeFunction( routePath, path, ( result?.groups ?? {} ) );
 				}
 			}
 		}

@@ -1,9 +1,13 @@
 declare namespace jDamnSmallRouter {
     interface CheckAvailability {
-        (path: string, hashPath: string): (boolean | Promise<boolean>);
+        (path: string, hashPath: string, params?: {
+            [key: string]: string;
+        }): (boolean | Promise<boolean>);
     }
     interface RouteFunction {
-        (path: string, hashPath: string): (void | Promise<void>);
+        (path: string, hashPath: string, params?: {
+            [key: string]: string;
+        }): (void | Promise<void>);
     }
     export function Create(): Router;
     class Router {
