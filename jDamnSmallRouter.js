@@ -7,12 +7,12 @@ var jDamnSmallRouter;
     jDamnSmallRouter.Create = Create;
     class Router {
         constructor() {
-            this._regexDuplicatePathId = new RegExp(/(:[\w]+)(?:\[(09|AZ)])\/(.+\/)?\1?/g);
+            this._regexDuplicatePathId = new RegExp(/\/(:[\w]+)(?:\[(09|AZ)])\/(.+\/)?\1?/g);
             this._regexSearchVariables = new RegExp(/(?<=^|\/):([\w]+)(?:\[(09|AZ)])?(?=\/|$)/g);
             this._routes = [];
             this._routeFunction403 = undefined;
             this._routeFunction404 = undefined;
-            window.addEventListener("hashchange", this.CheckHash);
+            window.addEventListener("hashchange", this.CheckHash.bind(this));
         }
         RouteSpecialAdd(code, routeFunction) {
             let returnValue = false;
@@ -35,7 +35,7 @@ var jDamnSmallRouter;
         }
         RouteAdd(path, routeFunction, available, routeFunction403) {
             let returnValue = false;
-            if (!path.match(this._regexDuplicatePathId)) {
+            if (path.match(this._regexDuplicatePathId)) {
                 throw new SyntaxError('Duplicate path id');
             }
             else {

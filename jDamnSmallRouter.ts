@@ -30,7 +30,7 @@ namespace jDamnSmallRouter {
 		private _routeFunction404: ( RouteFunction | undefined ) = undefined;
 
 		public constructor() {
-			window.addEventListener( "hashchange", this.CheckHash );
+			window.addEventListener( "hashchange", this.CheckHash.bind( this ) );
 		}
 
 		public RouteSpecialAdd( code: number, routeFunction: RouteFunction ) {
