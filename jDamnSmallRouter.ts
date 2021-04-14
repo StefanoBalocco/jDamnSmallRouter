@@ -23,7 +23,7 @@ namespace jDamnSmallRouter {
 	}
 
 	class Router {
-		private _regexDuplicatePathId = new RegExp( /(:[\w]+)(?:\[(09|AZ)])\/(.+\/)?\1?/g );
+		private _regexDuplicatePathId = new RegExp( /\/(:[\w]+)(?:\[(09|AZ)])\/(.+\/)?\1?/g );
 		private _regexSearchVariables = new RegExp( /(?<=^|\/):([\w]+)(?:\[(09|AZ)])?(?=\/|$)/g );
 		private _routes: Route[] = [];
 		private _routeFunction403: ( RouteFunction | undefined ) = undefined;
@@ -55,7 +55,7 @@ namespace jDamnSmallRouter {
 
 		public RouteAdd( path: string, routeFunction: RouteFunction, available?: CheckAvailability, routeFunction403?: RouteFunction ) {
 			let returnValue = false;
-			if( !path.match( this._regexDuplicatePathId ) ) {
+			if( path.match( this._regexDuplicatePathId ) ) {
 				throw new SyntaxError( 'Duplicate path id' );
 			} else {
 				let weight = 0;
