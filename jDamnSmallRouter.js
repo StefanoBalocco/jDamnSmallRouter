@@ -7,11 +7,13 @@ var jDamnSmallRouter;
     jDamnSmallRouter.Create = Create;
     class Router {
         constructor() {
-            this._regexDuplicatePathId = new RegExp(/\/(:[\w]+)(?:\[(09|AZ)])\/(.+\/)?\1?/g);
+            this._regexDuplicatePathId = new RegExp(/\/(:[\w]+)(?:\[(?:09|AZ)])\/(?:.+\/)?(\1)(?:(?:\[(?:09|AZ)])|\/|$)/g);
             this._regexSearchVariables = new RegExp(/(?<=^|\/):([\w]+)(?:\[(09|AZ)])?(?=\/|$)/g);
             this._routes = [];
             this._routeFunction403 = undefined;
             this._routeFunction404 = undefined;
+            this._routing = false;
+            this._queue = [];
             window.addEventListener("hashchange", this.CheckHash.bind(this));
         }
         RouteSpecialAdd(code, routeFunction) {
@@ -96,14 +98,14 @@ var jDamnSmallRouter;
             }
             return returnValue;
         }
-        async Trigger(path) {
+        Trigger(path) {
             if ('#' + path != window.location.hash) {
                 window.location.hash = '#' + path;
             }
-            return this.Route(path);
         }
         async Route(path) {
             var _a, _b, _c, _d;
+            this._routing = true;
             let routeFunction = undefined;
             let routePath = '';
             let result = null;
@@ -147,9 +149,23 @@ var jDamnSmallRouter;
                     routeFunction(routePath, path, ((_d = result === null || result === void 0 ? void 0 : result.groups) !== null && _d !== void 0 ? _d : {}));
                 }
             }
+            if (this._queue.length) {
+                this.Route(this._queue.shift());
+            }
+            else {
+                this._routing = false;
+            }
         }
         async CheckHash() {
-            return this.Trigger((window.location.hash.startsWith('#') ? window.location.hash.substr(1) : ''));
+            let hash = (window.location.hash.startsWith('#') ? window.location.hash.substr(1) : '');
+            if ('' != hash) {
+                if (this._routing) {
+                    this._queue.push(hash);
+                }
+                else {
+                    this.Route(hash);
+                }
+            }
         }
     }
 })(jDamnSmallRouter || (jDamnSmallRouter = {}));

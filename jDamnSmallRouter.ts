@@ -23,11 +23,13 @@ namespace jDamnSmallRouter {
 	}
 
 	class Router {
-		private _regexDuplicatePathId = new RegExp( /\/(:[\w]+)(?:\[(09|AZ)])\/(.+\/)?\1?/g );
+		private _regexDuplicatePathId = new RegExp( /\/(:[\w]+)(?:\[(?:09|AZ)])\/(?:.+\/)?(\1)(?:(?:\[(?:09|AZ)])|\/|$)/g );
 		private _regexSearchVariables = new RegExp( /(?<=^|\/):([\w]+)(?:\[(09|AZ)])?(?=\/|$)/g );
 		private _routes: Route[] = [];
 		private _routeFunction403: ( RouteFunction | undefined ) = undefined;
 		private _routeFunction404: ( RouteFunction | undefined ) = undefined;
+		private _routing : boolean = false;
+		private _queue : string[] = [];
 
 		public constructor() {
 			window.addEventListener( "hashchange", this.CheckHash.bind( this ) );
@@ -119,14 +121,14 @@ namespace jDamnSmallRouter {
 			return returnValue;
 		}
 
-		public async Trigger( path: string ) {
+		public Trigger( path: string ) {
 			if( '#' + path != window.location.hash ) {
 				window.location.hash = '#' + path;
 			}
-			return this.Route( path );
 		}
 
 		public async Route( path: string ) {
+			this._routing = true;
 			let routeFunction: ( RouteFunction | undefined ) = undefined;
 			let routePath: string = '';
 			let result: ( RegExpExecArray | null ) = null;
@@ -167,10 +169,22 @@ namespace jDamnSmallRouter {
 					routeFunction( routePath, path, ( result?.groups ?? {} ) );
 				}
 			}
+			if( this._queue.length ) {
+				this.Route( <string> this._queue.shift() );
+			} else {
+				this._routing = false;
+			}
 		}
 
 		public async CheckHash() {
-			return this.Trigger( ( window.location.hash.startsWith( '#' ) ? window.location.hash.substr( 1 ) : '' ) );
+			let hash = ( window.location.hash.startsWith( '#' ) ? window.location.hash.substr( 1 ) : '' );
+			if( '' != hash ) {
+				if( this._routing ) {
+					this._queue.push( hash );
+				} else {
+					this.Route( hash );
+				}
+			}
 		}
 	}
 }
