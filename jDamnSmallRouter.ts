@@ -23,8 +23,8 @@ namespace jDamnSmallRouter {
 	}
 
 	class Router {
-		private _regexDuplicatePathId = new RegExp( /\/(:[\w]+)(?:\[(?:09|AZ)])\/(?:.+\/)?(\1)(?:(?:\[(?:09|AZ)])|\/|$)/g );
-		private _regexSearchVariables = new RegExp( /(?<=^|\/):([\w]+)(?:\[(09|AZ)])?(?=\/|$)/g );
+		private _regexDuplicatePathId = new RegExp( /\/(:\w+)\[(?:09|AZ)]\/(?:.+\/)?(\1)(?:\[(?:09|AZ)]|\/|$)/g );
+		private _regexSearchVariables = new RegExp( /(?<=^|\/):(\w+)(?:\[(09|AZ)])?(?=\/|$)/g );
 		private _routes: Route[] = [];
 		private _routeFunction403: ( RouteFunction | undefined ) = undefined;
 		private _routeFunction404: ( RouteFunction | undefined ) = undefined;
@@ -170,19 +170,19 @@ namespace jDamnSmallRouter {
 				}
 			}
 			if( this._queue.length ) {
-				this.Route( <string> this._queue.shift() );
+				await this.Route( <string> this._queue.shift() );
 			} else {
 				this._routing = false;
 			}
 		}
 
 		public async CheckHash() {
-			let hash = ( window.location.hash.startsWith( '#' ) ? window.location.hash.substr( 1 ) : '' );
+			let hash = ( window.location.hash.startsWith( '#' ) ? window.location.hash.substring( 1 ) : '' );
 			if( '' != hash ) {
 				if( this._routing ) {
 					this._queue.push( hash );
 				} else {
-					this.Route( hash );
+					await this.Route( hash );
 				}
 			}
 		}
