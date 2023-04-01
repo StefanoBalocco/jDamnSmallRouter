@@ -1,10 +1,6 @@
 'use strict';
 var jDamnSmallRouter;
 (function (jDamnSmallRouter) {
-    function Create() {
-        return new Router();
-    }
-    jDamnSmallRouter.Create = Create;
     class Router {
         constructor() {
             this._regexDuplicatePathId = new RegExp(/\/(:\w+)\[(?:09|AZ)]\/(?:.+\/)?(\1)(?:\[(?:09|AZ)]|\/|$)/g);
@@ -43,10 +39,10 @@ var jDamnSmallRouter;
             else {
                 let weight = 0;
                 const paths = path.split('/');
-                const tmpCountFirstLevel = paths.length;
-                for (let indexFirstLevel = 0; indexFirstLevel < tmpCountFirstLevel; indexFirstLevel++) {
-                    if (!paths[indexFirstLevel].startsWith(':')) {
-                        weight += 2 ^ (tmpCountFirstLevel - indexFirstLevel - 1);
+                const cFL = paths.length;
+                for (let iFL = 0; iFL < cFL; iFL++) {
+                    if (!paths[iFL].startsWith(':')) {
+                        weight += 2 ^ (cFL - iFL - 1);
                     }
                 }
                 let regex = new RegExp('^' + path.replace(this._regexSearchVariables, function (_unused, name, type) {
@@ -168,4 +164,8 @@ var jDamnSmallRouter;
             }
         }
     }
+    function Create() {
+        return new Router();
+    }
+    jDamnSmallRouter.Create = Create;
 })(jDamnSmallRouter || (jDamnSmallRouter = {}));

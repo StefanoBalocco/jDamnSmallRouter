@@ -1,15 +1,10 @@
 declare namespace jDamnSmallRouter {
-    interface CheckAvailability {
-        (path: string, hashPath: string, params?: {
-            [key: string]: string;
-        }): (boolean | Promise<boolean>);
-    }
-    interface RouteFunction {
-        (path: string, hashPath: string, params?: {
-            [key: string]: string;
-        }): (void | Promise<void>);
-    }
-    export function Create(): Router;
+    type CheckAvailability = (path: string, hashPath: string, params?: {
+        [key: string]: string;
+    }) => (boolean | Promise<boolean>);
+    type RouteFunction = (path: string, hashPath: string, params?: {
+        [key: string]: string;
+    }) => (void | Promise<void>);
     class Router {
         private _regexDuplicatePathId;
         private _regexSearchVariables;
@@ -26,5 +21,6 @@ declare namespace jDamnSmallRouter {
         Route(path: string): Promise<void>;
         CheckHash(): Promise<void>;
     }
+    export function Create(): Router;
     export {};
 }

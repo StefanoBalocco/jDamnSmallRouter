@@ -1,14 +1,8 @@
 'use strict';
 
 namespace jDamnSmallRouter {
-	interface CheckAvailability {
-		( path: string, hashPath: string, params?: { [ key: string ]: string } ): ( boolean | Promise<boolean> )
-	}
-
-	interface RouteFunction {
-		( path: string, hashPath: string, params?: { [ key: string ]: string } ): ( void | Promise<void> )
-	}
-
+	type CheckAvailability = ( path: string, hashPath: string, params?: { [ key: string ]: string } ) => ( boolean | Promise<boolean> )
+	type RouteFunction = ( path: string, hashPath: string, params?: { [ key: string ]: string } ) => ( void | Promise<void> )
 	type Route = {
 		path: string,
 		match: RegExp,
@@ -18,18 +12,14 @@ namespace jDamnSmallRouter {
 		routeFunction403?: RouteFunction
 	};
 
-	export function Create(): Router {
-		return new Router();
-	}
-
 	class Router {
 		private _regexDuplicatePathId = new RegExp( /\/(:\w+)\[(?:09|AZ)]\/(?:.+\/)?(\1)(?:\[(?:09|AZ)]|\/|$)/g );
 		private _regexSearchVariables = new RegExp( /(?<=^|\/):(\w+)(?:\[(09|AZ)])?(?=\/|$)/g );
 		private _routes: Route[] = [];
 		private _routeFunction403: ( RouteFunction | undefined ) = undefined;
 		private _routeFunction404: ( RouteFunction | undefined ) = undefined;
-		private _routing : boolean = false;
-		private _queue : string[] = [];
+		private _routing: boolean = false;
+		private _queue: string[] = [];
 
 		public constructor() {
 			window.addEventListener( "hashchange", this.CheckHash.bind( this ) );
@@ -62,10 +52,10 @@ namespace jDamnSmallRouter {
 			} else {
 				let weight = 0;
 				const paths = path.split( '/' );
-				const tmpCountFirstLevel = paths.length;
-				for( let indexFirstLevel = 0; indexFirstLevel < tmpCountFirstLevel; indexFirstLevel++ ) {
-					if( !paths[ indexFirstLevel ].startsWith( ':' ) ) {
-						weight += 2 ^ ( tmpCountFirstLevel - indexFirstLevel - 1 );
+				const cFL = paths.length;
+				for( let iFL = 0; iFL < cFL; iFL++ ) {
+					if( !paths[ iFL ].startsWith( ':' ) ) {
+						weight += 2 ^ ( cFL - iFL - 1 );
 					}
 				}
 				let regex = new RegExp( '^' + path.replace( this._regexSearchVariables,
@@ -186,5 +176,9 @@ namespace jDamnSmallRouter {
 				}
 			}
 		}
+	}
+
+	export function Create(): Router {
+		return new Router();
 	}
 }
