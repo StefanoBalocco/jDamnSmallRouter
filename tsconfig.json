@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "module": "commonjs",
+    "target": "esnext",
+    "module": "esnext",
+	"moduleResolution": "bundler",
     "declaration": true,
     "removeComments": true,
     "strict": true,
@@ -15,8 +16,7 @@
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true
   },
-  "files":
-  [
+  "files": [
 	"jDamnSmallRouter.ts"
   ]
 }
