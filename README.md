@@ -7,7 +7,7 @@ A small JavaScript/TypeScript library for hash-based URL routing (`#`). It suppo
 To get started, obtain the unique router instance:
 
 ```
-import jDamnSmallRouter from './path/to/jDamnSmallRouter.js'; // Adjust path
+import jDamnSmallRouter from 'https://cdn.jsdelivr.net/gh/StefanoBalocco/jDamnSmallRouter/jDamnSmallRouter.min.js';
 const router = jDamnSmallRouter();
 ```
 
@@ -90,11 +90,13 @@ Changes the URL hash in the browser window, initiating the routing process. Equi
 
 * `path`: The path string to navigate to (without the '#').
 
-### `router.Route(path: string): Promise<void>`
+### `router.Route(path: string): Promise<boolean>`
 
 This is the internal method that performs the route matching logic and callback function execution. It is called automatically by the `hashchange` event listener (`CheckHash`) or by `Trigger`. You should not need to call this directly in most cases unless you want to force routing for a specific path without changing the URL hash.
 
 * `path`: The path string to match against (without the '#').
+
+This function return false if the system was already in a routing step, so the path is just enqueued.
 
 ### `router.CheckHash(): Promise<void>`
 
@@ -108,7 +110,7 @@ Route paths can contain static segments and dynamic parameters.
 
 * **Dynamic Parameters:** Start with `:` followed by a name (e.g., `:id`). They can include type hints in square brackets.
 
-  * `/:name`: Matches one or more "word" characters (`\w+`, includes letters, numbers, underscore). E.g., `/users/:username`.
+  * `/:name` and `/:name[AZ09]`: Matches one or more digit or upper or lower case letters (`a-zA-Z0-9+`). E.g., `/users/:username`.
 
   * `/:name[09]`: Matches one or more digits (`\d+`). E.g., `/products/:id[09]`.
 

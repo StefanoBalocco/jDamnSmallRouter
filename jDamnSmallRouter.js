@@ -1,21 +1,34 @@
 'use strict';
 class jDamnSmallRouter {
     static _instance;
-    static _GetDamnSmallRouter() {
-        if ('undefined' === typeof jDamnSmallRouter._instance) {
+    static _getDamnSmallRouter() {
+        if (undefined === jDamnSmallRouter._instance) {
             jDamnSmallRouter._instance = new jDamnSmallRouter();
         }
         return jDamnSmallRouter._instance;
     }
+    static _checkRouteEquivalence(path1, path2) {
+        const generateVariants = (path) => {
+            let returnValue = [path];
+            if (path.includes(':AZ09')) {
+                returnValue.push(...generateVariants(path.replace(/:AZ09/, ':AZ')), ...generateVariants(path.replace(/:AZ09/, ':09')));
+            }
+            return returnValue;
+        };
+        const variants = new Set(generateVariants(path1));
+        return [...generateVariants(path2)].some((x) => variants.has(x));
+    }
     _regexDuplicatePathId = new RegExp(/\/(:\w+)\[(?:09|AZ)]\/(?:.+\/)?(\1)(?:\[(?:09|AZ)]|\/|$)/g);
     _regexSearchVariables = new RegExp(/(?<=^|\/):(\w+)(?:\[(09|AZ)])?(?=\/|$)/g);
     _routes = [];
-    _routeFunction403 = undefined;
-    _routeFunction404 = undefined;
+    _routeFunction403;
+    _routeFunction404;
     _routing = false;
     _queue = [];
+    _window = window;
+    _location = this._window.location;
     constructor() {
-        window.addEventListener("hashchange", this.CheckHash.bind(this));
+        this._window.addEventListener('hashchange', this.CheckHash.bind(this));
     }
     RouteSpecialAdd(code, routeFunction) {
         let returnValue = false;
@@ -43,14 +56,7 @@ class jDamnSmallRouter {
         }
         else {
             let weight = 0;
-            const paths = path.split('/');
-            const cFL = paths.length;
-            for (let iFL = 0; iFL < cFL; iFL++) {
-                if (!paths[iFL].startsWith(':')) {
-                    weight += 2 ** (cFL - iFL - 1);
-                }
-            }
-            let regex = new RegExp('^' + path.replace(this._regexSearchVariables, function (_unused, name, type) {
+            let regex = new RegExp('^' + path.replace(this._regexSearchVariables, function (_, name, type) {
                 let returnValue = '(?<' + name + '>[';
                 switch (type) {
                     case '09': {
@@ -61,15 +67,23 @@ class jDamnSmallRouter {
                         returnValue += 'a-zA-Z';
                         break;
                     }
+                    case 'AZ09':
                     default: {
-                        returnValue += '\\w';
+                        returnValue += 'a-zA-Z\\d';
                     }
                 }
                 returnValue += ']+)';
-                return (returnValue);
+                return returnValue;
             }).replace(/\//g, '\\\/') + '$');
-            const reducedPath = path.replace(this._regexSearchVariables, ':$2');
-            if (!this._routes.find((route) => (reducedPath == route.path))) {
+            const reducedPath = path.replace(this._regexSearchVariables, (_, __, component) => `:${component ?? 'AZ09'}`);
+            const paths = path.split('/');
+            const cFL = paths.length;
+            for (let iFL = 0; iFL < cFL; iFL++) {
+                if (!paths[iFL].startsWith(':')) {
+                    weight += 2 ** (cFL - iFL - 1);
+                }
+            }
+            if (!this._routes.find((route) => jDamnSmallRouter._checkRouteEquivalence(reducedPath, route.path))) {
                 this._routes.push({
                     path: reducedPath,
                     match: regex,
@@ -90,8 +104,8 @@ class jDamnSmallRouter {
             throw new SyntaxError('Duplicate path id');
         }
         else {
-            const reducedPath = path.replace(this._regexSearchVariables, ':$2');
-            const index = this._routes.findIndex((route) => (reducedPath == route.path));
+            const reducedPath = path.replace(this._regexSearchVariables, (_, __, component) => `:${component ?? 'AZ09'}`);
+            const index = this._routes.findIndex((route) => jDamnSmallRouter._checkRouteEquivalence(reducedPath, route.path));
             if (-1 < index) {
                 this._routes.splice(index, 1);
                 returnValue = true;
@@ -100,64 +114,41 @@ class jDamnSmallRouter {
         return returnValue;
     }
     Trigger(path) {
-        if ('#' + path != window.location.hash) {
-            window.location.hash = '#' + path;
+        if ('#' + path != this._location.hash) {
+            this._location.hash = '#' + path;
         }
     }
     async Route(path) {
-        this._routing = true;
-        let routeFunction = undefined;
-        let routePath = '';
-        let result = null;
-        for (const route of this._routes) {
-            if ((result = route.match.exec(path))) {
-                routePath = route.path;
-                let available = true;
-                if (route.available) {
-                    available = false;
-                    if ('function' === typeof route.available) {
-                        if ('AsyncFunction' === route.available.constructor.name) {
-                            available = await route.available(routePath, path, (result.groups ?? {}));
-                        }
-                        else {
-                            available = route.available(routePath, path, (result.groups ?? {}));
-                        }
-                    }
-                }
-                if (available) {
-                    routeFunction = route.routeFunction;
-                }
-                else if (route.routeFunction403) {
-                    routeFunction = route.routeFunction403;
-                }
-                else if (this._routeFunction403) {
-                    routeFunction = this._routeFunction403;
-                }
-                break;
-            }
-        }
-        if (!routeFunction || ('function' !== typeof routeFunction)) {
-            if (this._routeFunction404) {
-                routeFunction = this._routeFunction404;
-            }
-        }
-        if (routeFunction && ('function' === typeof routeFunction)) {
-            if ('AsyncFunction' === routeFunction.constructor.name) {
-                await routeFunction(routePath, path, (result?.groups ?? {}));
-            }
-            else {
-                routeFunction(routePath, path, (result?.groups ?? {}));
-            }
-        }
-        if (this._queue.length) {
-            await this.Route(this._queue.shift());
+        let returnValue = true;
+        this._queue.push(path);
+        if (this._routing) {
+            returnValue = false;
         }
         else {
+            this._routing = true;
+            while (path = this._queue.shift()) {
+                let result;
+                const route = this._routes.find((currentRoute) => {
+                    return !!(result = currentRoute.match.exec(path));
+                });
+                if (route && result) {
+                    let routePath = route.path;
+                    let available = route.available ? (('function' === typeof route.available) && await route.available(routePath, path, (result.groups ?? {}))) : true;
+                    let routeFunction = (available ? route.routeFunction : (route.routeFunction403 ?? this._routeFunction403));
+                    if (('function' !== typeof routeFunction) && this._routeFunction404) {
+                        routeFunction = this._routeFunction404;
+                    }
+                    if ('function' === typeof routeFunction) {
+                        await routeFunction(routePath, path, (result?.groups ?? {}));
+                    }
+                }
+            }
             this._routing = false;
         }
+        return returnValue;
     }
     async CheckHash() {
-        let hash = (window.location.hash.startsWith('#') ? window.location.hash.substring(1) : '');
+        const hash = this._location.hash.substring(1);
         if ('' != hash) {
             if (this._routing) {
                 this._queue.push(hash);
@@ -168,4 +159,4 @@ class jDamnSmallRouter {
         }
     }
 }
-export default jDamnSmallRouter._GetDamnSmallRouter;
+export default jDamnSmallRouter._getDamnSmallRouter;
