@@ -2,10 +2,10 @@
 
 type Undefinedable<T> = T | undefined;
 type Nullable<T> = T | null;
-type Promisable<T> = Promise<T>;
+type Promisable<T> = T | Promise<T>;
 
-export type CheckAvailability = ( path: string, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<boolean>;
-export type RouteFunction = ( path: string, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<void>;
+export type CheckAvailability = ( routePath: string, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<boolean>;
+export type RouteFunction = ( routePath: Undefinedable<string>, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<void>;
 export type Route = {
 	path: string,
 	match: RegExp,
@@ -45,6 +45,7 @@ class jDamnSmallRouter {
 	private _routes: Route[] = [];
 	private _routeFunction403: Undefinedable<RouteFunction>;
 	private _routeFunction404: Undefinedable<RouteFunction>;
+	private _routeFunction500: Undefinedable<RouteFunction>;
 	private _routing: boolean = false;
 	private _queue: string[] = [];
 	private _window: Window = window;
@@ -52,6 +53,10 @@ class jDamnSmallRouter {
 
 	private constructor() {
 		this._window.addEventListener( 'hashchange', this.CheckHash.bind( this ) );
+	}
+
+	private _getHash(): string {
+		return this._location.hash.substring( 1 );
 	}
 
 	public RouteSpecialAdd( code: number, routeFunction: RouteFunction ): boolean {
@@ -64,6 +69,11 @@ class jDamnSmallRouter {
 			}
 			case 404: {
 				this._routeFunction404 = routeFunction;
+				returnValue = true;
+				break;
+			}
+			case 500: {
+				this._routeFunction500 = routeFunction;
 				returnValue = true;
 				break;
 			}
@@ -147,10 +157,11 @@ class jDamnSmallRouter {
 		return returnValue;
 	}
 
-	public Trigger( path: string ): void {
-		if( '#' + path != this._location.hash ) {
+	public async Trigger( path: Undefinedable<string> ): Promise<boolean> {
+		if( ( undefined !== path ) && ( path != this._getHash() ) ) {
 			this._location.hash = '#' + path;
 		}
+		return await this.CheckHash();
 	}
 
 	public async Route( path: string ): Promise<boolean> {
@@ -161,22 +172,36 @@ class jDamnSmallRouter {
 		} else {
 			this._routing = true;
 			while( path = this._queue.shift()! ) {
-				let result: Undefinedable<Nullable<RegExpExecArray>>;
-				const route: Undefinedable<Route> = this._routes.find(
-					( currentRoute: Route ): boolean => {
-						return !!( result = currentRoute.match.exec( path ) );
+				let routePath: Undefinedable<string>;
+				let routeFunction: Undefinedable<RouteFunction>;
+				let match: Undefinedable<Nullable<RegExpExecArray>>;
+				const route: Route = this._routes.reduce( ( selectedRoute: Route, currentRoute: Route ): Route => {
+					let returnValue: Route = selectedRoute;
+					if( currentRoute.weight > selectedRoute.weight ) {
+						let tmpValue: Nullable<RegExpExecArray> = currentRoute.match.exec( path );
+						if( tmpValue ) {
+							returnValue = currentRoute;
+							match = tmpValue;
+						}
 					}
-				);
-				if( route && result ) {
-					let routePath: string = route.path;
-					let available: boolean = route.available ? ( ( 'function' === typeof route.available ) && await route.available( routePath, path, ( result.groups ?? {} ) ) ) : true;
-					let routeFunction: Undefinedable<RouteFunction> = ( available ? route.routeFunction : ( route.routeFunction403 ?? this._routeFunction403 ) );
-					if( ( 'function' !== typeof routeFunction ) && this._routeFunction404 ) {
+					return returnValue;
+				} );
+				if( route ) {
+					if( match ) {
+						routePath = route.path;
+						let available: boolean = route.available ? ( ( 'function' === typeof route.available ) && await route.available( routePath, path, ( match.groups ?? {} ) ) ) : true;
+						routeFunction = ( available ? route.routeFunction : ( route.routeFunction403 ?? this._routeFunction403 ) );
+						if( ( 'function' !== typeof routeFunction ) ) {
+							routeFunction = this._routeFunction500;
+						}
+					} else {
 						routeFunction = this._routeFunction404;
 					}
-					if( 'function' === typeof routeFunction ) {
-						await routeFunction( routePath, path, ( result?.groups ?? {} ) );
-					}
+				} else {
+					routeFunction = this._routeFunction404;
+				}
+				if( 'function' === typeof routeFunction ) {
+					await routeFunction( routePath, path, ( match?.groups ?? {} ) );
 				}
 			}
 			this._routing = false;
@@ -184,15 +209,9 @@ class jDamnSmallRouter {
 		return returnValue;
 	}
 
-	public async CheckHash(): Promise<void> {
-		const hash: string = this._location.hash.substring( 1 );
-		if( '' != hash ) {
-			if( this._routing ) {
-				this._queue.push( hash );
-			} else {
-				await this.Route( hash );
-			}
-		}
+	public async CheckHash(): Promise<boolean> {
+		const hash: string = this._getHash();
+		return ( hash ? await this.Route( hash ) : false );
 	}
 }
 

@@ -23,12 +23,16 @@ class jDamnSmallRouter {
     _routes = [];
     _routeFunction403;
     _routeFunction404;
+    _routeFunction500;
     _routing = false;
     _queue = [];
     _window = window;
     _location = this._window.location;
     constructor() {
         this._window.addEventListener('hashchange', this.CheckHash.bind(this));
+    }
+    _getHash() {
+        return this._location.hash.substring(1);
     }
     RouteSpecialAdd(code, routeFunction) {
         let returnValue = false;
@@ -40,6 +44,11 @@ class jDamnSmallRouter {
             }
             case 404: {
                 this._routeFunction404 = routeFunction;
+                returnValue = true;
+                break;
+            }
+            case 500: {
+                this._routeFunction500 = routeFunction;
                 returnValue = true;
                 break;
             }
@@ -113,10 +122,11 @@ class jDamnSmallRouter {
         }
         return returnValue;
     }
-    Trigger(path) {
-        if ('#' + path != this._location.hash) {
+    async Trigger(path) {
+        if ((undefined !== path) && (path != this._getHash())) {
             this._location.hash = '#' + path;
         }
+        return await this.CheckHash();
     }
     async Route(path) {
         let returnValue = true;
@@ -127,20 +137,38 @@ class jDamnSmallRouter {
         else {
             this._routing = true;
             while (path = this._queue.shift()) {
-                let result;
-                const route = this._routes.find((currentRoute) => {
-                    return !!(result = currentRoute.match.exec(path));
+                let routePath;
+                let routeFunction;
+                let match;
+                const route = this._routes.reduce((selectedRoute, currentRoute) => {
+                    let returnValue = selectedRoute;
+                    if (currentRoute.weight > selectedRoute.weight) {
+                        let tmpValue = currentRoute.match.exec(path);
+                        if (tmpValue) {
+                            returnValue = currentRoute;
+                            match = tmpValue;
+                        }
+                    }
+                    return returnValue;
                 });
-                if (route && result) {
-                    let routePath = route.path;
-                    let available = route.available ? (('function' === typeof route.available) && await route.available(routePath, path, (result.groups ?? {}))) : true;
-                    let routeFunction = (available ? route.routeFunction : (route.routeFunction403 ?? this._routeFunction403));
-                    if (('function' !== typeof routeFunction) && this._routeFunction404) {
+                if (route) {
+                    if (match) {
+                        routePath = route.path;
+                        let available = route.available ? (('function' === typeof route.available) && await route.available(routePath, path, (match.groups ?? {}))) : true;
+                        routeFunction = (available ? route.routeFunction : (route.routeFunction403 ?? this._routeFunction403));
+                        if (('function' !== typeof routeFunction)) {
+                            routeFunction = this._routeFunction500;
+                        }
+                    }
+                    else {
                         routeFunction = this._routeFunction404;
                     }
-                    if ('function' === typeof routeFunction) {
-                        await routeFunction(routePath, path, (result?.groups ?? {}));
-                    }
+                }
+                else {
+                    routeFunction = this._routeFunction404;
+                }
+                if ('function' === typeof routeFunction) {
+                    await routeFunction(routePath, path, (match?.groups ?? {}));
                 }
             }
             this._routing = false;
@@ -148,15 +176,8 @@ class jDamnSmallRouter {
         return returnValue;
     }
     async CheckHash() {
-        const hash = this._location.hash.substring(1);
-        if ('' != hash) {
-            if (this._routing) {
-                this._queue.push(hash);
-            }
-            else {
-                await this.Route(hash);
-            }
-        }
+        const hash = this._getHash();
+        return (hash ? await this.Route(hash) : false);
     }
 }
 export default jDamnSmallRouter._getDamnSmallRouter;

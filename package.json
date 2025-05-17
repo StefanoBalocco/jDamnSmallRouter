@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/StefanoBalocco/jDamnSmallRouter.git"
   },
-  "version": "1.1.5",
+  "version": "1.1.6",
   "keywords": [
     "hash router",
     "client-side router",

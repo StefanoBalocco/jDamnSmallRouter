@@ -1,8 +1,9 @@
-type Promisable<T> = Promise<T>;
-export type CheckAvailability = (path: string, hashPath: string, params?: {
+type Undefinedable<T> = T | undefined;
+type Promisable<T> = T | Promise<T>;
+export type CheckAvailability = (routePath: string, hashPath: string, params?: {
     [key: string]: string;
 }) => Promisable<boolean>;
-export type RouteFunction = (path: string, hashPath: string, params?: {
+export type RouteFunction = (routePath: Undefinedable<string>, hashPath: string, params?: {
     [key: string]: string;
 }) => Promisable<void>;
 export type Route = {
@@ -22,17 +23,19 @@ declare class jDamnSmallRouter {
     private _routes;
     private _routeFunction403;
     private _routeFunction404;
+    private _routeFunction500;
     private _routing;
     private _queue;
     private _window;
     private _location;
     private constructor();
+    private _getHash;
     RouteSpecialAdd(code: number, routeFunction: RouteFunction): boolean;
     RouteAdd(path: string, routeFunction: RouteFunction, available?: CheckAvailability, routeFunction403?: RouteFunction): boolean;
     RouteDel(path: string): boolean;
-    Trigger(path: string): void;
+    Trigger(path: Undefinedable<string>): Promise<boolean>;
     Route(path: string): Promise<boolean>;
-    CheckHash(): Promise<void>;
+    CheckHash(): Promise<boolean>;
 }
 declare const _default: typeof jDamnSmallRouter._getDamnSmallRouter;
 export default _default;
