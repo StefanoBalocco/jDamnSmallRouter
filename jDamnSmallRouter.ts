@@ -1,8 +1,8 @@
 'use strict';
 
 type Undefinedable<T> = T | undefined;
-type Nullable<T> = T | null;
 type Promisable<T> = T | Promise<T>;
+//type Nullable<T> = T | null;
 
 export type CheckAvailability = ( routePath: string, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<boolean>;
 export type RouteFunction = ( routePath: Undefinedable<string>, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<void>;
@@ -174,34 +174,27 @@ class jDamnSmallRouter {
 			while( path = this._queue.shift()! ) {
 				let routePath: Undefinedable<string>;
 				let routeFunction: Undefinedable<RouteFunction>;
-				let match: Undefinedable<Nullable<RegExpExecArray>>;
-				const route: Route = this._routes.reduce( ( selectedRoute: Route, currentRoute: Route ): Route => {
-					let returnValue: Route = selectedRoute;
-					if( currentRoute.weight > selectedRoute.weight ) {
-						let tmpValue: Nullable<RegExpExecArray> = currentRoute.match.exec( path );
-						if( tmpValue ) {
-							returnValue = currentRoute;
-							match = tmpValue;
-						}
-					}
-					return returnValue;
-				} );
-				if( route ) {
-					if( match ) {
-						routePath = route.path;
-						let available: boolean = route.available ? ( ( 'function' === typeof route.available ) && await route.available( routePath, path, ( match.groups ?? {} ) ) ) : true;
-						routeFunction = ( available ? route.routeFunction : ( route.routeFunction403 ?? this._routeFunction403 ) );
-						if( ( 'function' !== typeof routeFunction ) ) {
-							routeFunction = this._routeFunction500;
-						}
-					} else {
-						routeFunction = this._routeFunction404;
+				const routes: Route[] = this._routes.filter(
+					( route: Route ): boolean => !!route.match.exec( path )
+				).sort(
+					( left: Route, right: Route ) => right.weight - left.weight
+				);
+				let params: { [ key: string ]: string } = {};
+				if( 0 < routes.length ) {
+					const route: Route = routes[ 0 ];
+					// match.exec is always not null because we already filtered all the routes with !!route.match.exec
+					params = route.match.exec( path )!.groups ?? {};
+					routePath = route.path;
+					let available: boolean = route.available ? ( ( 'function' === typeof route.available ) && await route.available( routePath, path, params ) ) : true;
+					routeFunction = ( available ? route.routeFunction : ( route.routeFunction403 ?? this._routeFunction403 ) );
+					if( ( 'function' !== typeof routeFunction ) ) {
+						routeFunction = this._routeFunction500;
 					}
 				} else {
 					routeFunction = this._routeFunction404;
 				}
 				if( 'function' === typeof routeFunction ) {
-					await routeFunction( routePath, path, ( match?.groups ?? {} ) );
+					await routeFunction( routePath, path, params );
 				}
 			}
 			this._routing = false;

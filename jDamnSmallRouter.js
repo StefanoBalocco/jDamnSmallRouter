@@ -139,36 +139,23 @@ class jDamnSmallRouter {
             while (path = this._queue.shift()) {
                 let routePath;
                 let routeFunction;
-                let match;
-                const route = this._routes.reduce((selectedRoute, currentRoute) => {
-                    let returnValue = selectedRoute;
-                    if (currentRoute.weight > selectedRoute.weight) {
-                        let tmpValue = currentRoute.match.exec(path);
-                        if (tmpValue) {
-                            returnValue = currentRoute;
-                            match = tmpValue;
-                        }
-                    }
-                    return returnValue;
-                });
-                if (route) {
-                    if (match) {
-                        routePath = route.path;
-                        let available = route.available ? (('function' === typeof route.available) && await route.available(routePath, path, (match.groups ?? {}))) : true;
-                        routeFunction = (available ? route.routeFunction : (route.routeFunction403 ?? this._routeFunction403));
-                        if (('function' !== typeof routeFunction)) {
-                            routeFunction = this._routeFunction500;
-                        }
-                    }
-                    else {
-                        routeFunction = this._routeFunction404;
+                const routes = this._routes.filter((route) => !!route.match.exec(path)).sort((left, right) => right.weight - left.weight);
+                let params = {};
+                if (0 < routes.length) {
+                    const route = routes[0];
+                    params = route.match.exec(path).groups ?? {};
+                    routePath = route.path;
+                    let available = route.available ? (('function' === typeof route.available) && await route.available(routePath, path, params)) : true;
+                    routeFunction = (available ? route.routeFunction : (route.routeFunction403 ?? this._routeFunction403));
+                    if (('function' !== typeof routeFunction)) {
+                        routeFunction = this._routeFunction500;
                     }
                 }
                 else {
                     routeFunction = this._routeFunction404;
                 }
                 if ('function' === typeof routeFunction) {
-                    await routeFunction(routePath, path, (match?.groups ?? {}));
+                    await routeFunction(routePath, path, params);
                 }
             }
             this._routing = false;
