@@ -16,18 +16,16 @@ export type Route = {
 };
 declare class jDamnSmallRouter {
     private static _instance;
+    private static _window;
+    private static _location;
     static _getDamnSmallRouter(): jDamnSmallRouter;
     private static _checkRouteEquivalence;
     private _regexDuplicatePathId;
     private _regexSearchVariables;
     private _routes;
-    private _routeFunction403;
-    private _routeFunction404;
-    private _routeFunction500;
+    private _routeSpecialFunction;
     private _routing;
     private _queue;
-    private _window;
-    private _location;
     private constructor();
     private _getHash;
     RouteSpecialAdd(code: number, routeFunction: RouteFunction): boolean;
