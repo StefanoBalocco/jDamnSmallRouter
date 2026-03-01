@@ -16,7 +16,7 @@ class jDamnSmallRouter {
 	private static _instance: Undefinedable<jDamnSmallRouter>;
 	private _window: Window;
 	private _regexDuplicatePathId: RegExp = /\/(:\w+)(?:\[(?:09|AZ|AZ09)])?\/(?:.+\/)?(\1)(?:\[(?:09|AZ|AZ09)])?(?:\/|$)/g;
-	private _regexSearchVariables: RegExp = /(?<=^|\/):(\w+)(?:\[(09|AZ)])?(?=\/|$)/g;
+	private _regexSearchVariables: RegExp = /(?<=^|\/):(\w+)(?:\[(09|AZ|AZ09)])?(?=\/|$)/g;
 	private _routes: Route[] = [];
 	private _routeSpecialFunction: RouteFunction[] = [];
 	private _routing: boolean = false;
