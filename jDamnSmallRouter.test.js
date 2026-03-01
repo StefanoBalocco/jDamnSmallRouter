@@ -7,6 +7,14 @@ globalThis.window = {
 import GetInstance from './jDamnSmallRouter.js';
 const router = GetInstance();
 let prefix = '';
+test.serial('Route: calls 500 handler when available returns false and no 403 handlers', async (t) => {
+    let called500 = false;
+    router.RouteSpecialAdd(500, () => { called500 = true; });
+    router.RouteAdd('/route/fallback500', () => { }, () => false);
+    await router.Route('/route/fallback500');
+    router.RouteDel('/route/fallback500');
+    t.true(called500);
+});
 {
     prefix = 'RouteSpecialAdd';
     test(prefix + ': returns true for code 403', (t) => {

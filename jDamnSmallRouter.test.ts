@@ -13,6 +13,19 @@ const router = GetInstance();
 
 let prefix: string = '';
 
+// ── Route 500 fallback ────────────────────────────────────────────────────────
+// Seriale e primo: deve girare prima dei test concorrenti di RouteSpecialAdd,
+// perché richiede che _routeSpecialFunction[403] sia ancora undefined.
+
+test.serial( 'Route: calls 500 handler when available returns false and no 403 handlers', async ( t ) => {
+	let called500 = false;
+	router.RouteSpecialAdd( 500, () => { called500 = true; } );
+	router.RouteAdd( '/route/fallback500', () => {}, () => false );
+	await router.Route( '/route/fallback500' );
+	router.RouteDel( '/route/fallback500' );
+	t.true( called500 );
+} );
+
 // ── RouteSpecialAdd ───────────────────────────────────────────────────────────
 // Paralleli: non eseguono routing, nessuna race condition.
 
