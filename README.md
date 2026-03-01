@@ -7,7 +7,7 @@ A small JavaScript/TypeScript library for hash-based URL routing (`#`). It suppo
 To get started, obtain the unique router instance:
 
 ```
-import jDamnSmallRouter from 'https://cdn.jsdelivr.net/gh/StefanoBalocco/jDamnSmallRouter@2.0.0/jDamnSmallRouter.min.js';
+import jDamnSmallRouter from 'https://cdn.jsdelivr.net/gh/StefanoBalocco/jDamnSmallRouter@2.0.1/jDamnSmallRouter.min.js';
 const router = jDamnSmallRouter();
 ```
 
