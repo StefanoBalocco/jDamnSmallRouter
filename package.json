@@ -1,30 +1,41 @@
 {
   "name": "jdamnsmallmrouter",
   "description": "Damn small hash router",
-  "exports": "./jDamnSmallRouter.min.js",
-  "types": "jDamnSmallRouter.d.ts",
   "type": "module",
+  "main": "jDamnSmallRouter.min.js",
+  "types": "jDamnSmallRouter.d.ts",
+  "exports": {
+    ".": {
+      "import": "./jDamnSmallRouter.min.js",
+      "types": "./jDamnSmallRouter.d.ts"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/StefanoBalocco/jDamnSmallRouter.git"
   },
-  "version": "1.1.7",
+  "version": "2.0.0",
   "keywords": [
     "hash router",
     "client-side router",
     "spa router"
   ],
   "author": "Stefano Balocco <stefano.balocco@gmail.com>",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/StefanoBalocco/jDamnSmallRouter/issues"
   },
   "homepage": "https://github.com/StefanoBalocco/jDamnSmallRouter",
   "scripts": {
-    "build": "node_modules/typescript/bin/tsc && node_modules/terser/bin/terser jDamnSmallRouter.js -o jDamnSmallRouter.min.js --toplevel -m -c --mangle-props regex=/^_/"
+    "build": "node build.mjs library tests",
+    "build:library": "node build.mjs library",
+    "build:tests": "node build.mjs tests",
+    "run:tests": "npx ava '*.test.js' --verbose"
   },
   "devDependencies": {
-    "terser": "~5",
-    "typescript": "~5"
+    "ava": "~6",
+    "c8": "~10",
+    "terser": "^5",
+    "typescript": "^5"
   }
 }

@@ -1,11 +1,8 @@
-'use strict';
-
 type Undefinedable<T> = T | undefined;
 type Promisable<T> = T | Promise<T>;
-//type Nullable<T> = T | null;
 
 export type CheckAvailability = ( routePath: string, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<boolean>;
-export type RouteFunction = ( routePath: Undefinedable<string>, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<void>;
+export type RouteFunction = ( routePath: string, hashPath: string, params?: { [ key: string ]: string } ) => Promisable<void>;
 export type Route = {
 	path: string,
 	match: RegExp,
@@ -17,12 +14,27 @@ export type Route = {
 
 class jDamnSmallRouter {
 	private static _instance: Undefinedable<jDamnSmallRouter>;
-	private static _window: Window = window;
-	private static _location: Location = jDamnSmallRouter._window.location;
+	private _window: Window;
+	private _regexDuplicatePathId: RegExp = /\/(:\w+)(?:\[(?:09|AZ|AZ09)])?\/(?:.+\/)?(\1)(?:\[(?:09|AZ|AZ09)])?(?:\/|$)/g;
+	private _regexSearchVariables: RegExp = /(?<=^|\/):(\w+)(?:\[(09|AZ)])?(?=\/|$)/g;
+	private _routes: Route[] = [];
+	private _routeSpecialFunction: RouteFunction[] = [];
+	private _routing: boolean = false;
+	private _queue: string[] = [];
+	private _characterClasses: Record<string, string> = {
+		'09': '\\d',
+		'AZ': 'a-zA-Z',
+		'AZ09': 'a-zA-Z\\d'
+	};
 
-	public static _getDamnSmallRouter(): jDamnSmallRouter {
+	private constructor( window: Window ) {
+		this._window = window;
+		this._window.addEventListener( 'hashchange', this.CheckHash.bind( this ) );
+	}
+
+	public static GetInstance(): jDamnSmallRouter {
 		if( undefined === jDamnSmallRouter._instance ) {
-			jDamnSmallRouter._instance = new jDamnSmallRouter();
+			jDamnSmallRouter._instance = new jDamnSmallRouter( window );
 		}
 		return jDamnSmallRouter._instance;
 	}
@@ -42,28 +54,11 @@ class jDamnSmallRouter {
 		return [ ...generateVariants( path2 ) ].some( ( x: string ) => variants.has( x ) );
 	}
 
-	private _regexDuplicatePathId: RegExp = /\/(:\w+)\[(?:09|AZ)]\/(?:.+\/)?(\1)(?:\[(?:09|AZ)]|\/|$)/;
-	private _regexSearchVariables: RegExp = /(?<=^|\/):(\w+)(?:\[(09|AZ)])?(?=\/|$)/g;
-	private _routes: Route[] = [];
-	private _routeSpecialFunction: RouteFunction[] = [];
-	private _routing: boolean = false;
-	private _queue: string[] = [];
-
-	private constructor() {
-		jDamnSmallRouter._window.addEventListener( 'hashchange', this.CheckHash.bind( this ) );
-	}
-
-	private _getHash(): string {
-		return jDamnSmallRouter._location.hash.substring( 1 );
-	}
-
 	public RouteSpecialAdd( code: number, routeFunction: RouteFunction ): boolean {
 		let returnValue: boolean = false;
 		if( [ 403, 404, 500 ].includes( code ) ) {
 			this._routeSpecialFunction[ code ] = routeFunction;
 			returnValue = true;
-		} else {
-			throw new RangeError();
 		}
 		return returnValue;
 	}
@@ -75,13 +70,9 @@ class jDamnSmallRouter {
 		} else {
 			const regex: RegExp = new RegExp( '^' + path.replaceAll( this._regexSearchVariables,
 				( _: string, name: string, type: string ): string => {
-					const characterClass: string = {
-																					 '09': '\\d',
-																					 'AZ': 'a-zA-Z',
-																					 'AZ09': 'a-zA-Z\\d'
-																				 }[ type ] ?? 'a-zA-Z\\d';
+					const characterClass: string = this._characterClasses[ type ] ?? this._characterClasses[ 'AZ09' ];
 					return `(?<${ name }>[${ characterClass }]+)`;
-				} ).replace( /\//g, '\\\/' ) + '$' );
+				} ) + '$' );
 			const reducedPath: string = path.replaceAll(
 				this._regexSearchVariables,
 				( _: string, __: any, component: any ): string => `:${ component ?? 'AZ09' }`
@@ -125,18 +116,16 @@ class jDamnSmallRouter {
 			if( -1 < index ) {
 				this._routes.splice( index, 1 );
 				returnValue = true;
-			} else {
-				throw new Error( 'Duplicated path' );
 			}
 		}
 		return returnValue;
 	}
 
-	public async Trigger( path: Undefinedable<string> ): Promise<boolean> {
+	public Trigger( path: Undefinedable<string> ): Promise<boolean> {
 		if( ( undefined !== path ) && ( this._getHash() !== path ) ) {
-			jDamnSmallRouter._location.hash = '#' + path;
+			this._window.location.hash = '#' + path;
 		}
-		return await this.CheckHash();
+		return this.CheckHash();
 	}
 
 	public async Route( path: string ): Promise<boolean> {
@@ -145,8 +134,9 @@ class jDamnSmallRouter {
 		if( !this._routing ) {
 			returnValue = true;
 			this._routing = true;
-			while( path = this._queue.shift()! ) {
-				let routePath: Undefinedable<string>;
+			while( this._queue.length ) {
+				path = this._queue.shift()!;
+				let routePath: string = '';
 				let routeFunction: Undefinedable<RouteFunction>;
 				let params: Record<string, string> = {};
 				const route: Undefinedable<Route> = this._routes.find(
@@ -156,7 +146,7 @@ class jDamnSmallRouter {
 					// match.exec is always not null because we already filtered all the routes with !!route.match.exec
 					params = route.match.exec( path )!.groups ?? {};
 					routePath = route.path;
-					let available: boolean = ( route.available ? ( ( 'function' === typeof route.available ) && await route.available( routePath, path, params ) ) : true );
+					const available: boolean = ( route.available ? ( ( 'function' === typeof route.available ) && await route.available( routePath, path, params ) ) : true );
 					routeFunction = ( available ? route.routeFunction : ( route.routeFunction403 ?? this._routeSpecialFunction[ 403 ] ) );
 					if( 'function' !== typeof routeFunction ) {
 						routeFunction = this._routeSpecialFunction[ 500 ];
@@ -175,8 +165,12 @@ class jDamnSmallRouter {
 
 	public async CheckHash(): Promise<boolean> {
 		const hash: string = this._getHash();
-		return ( hash ? await this.Route( hash ) : false );
+		return ( hash ? this.Route( hash ) : false );
+	}
+
+	private _getHash(): string {
+		return this._window.location.hash.substring( 1 );
 	}
 }
 
-export default jDamnSmallRouter._getDamnSmallRouter;
+export default jDamnSmallRouter.GetInstance;
