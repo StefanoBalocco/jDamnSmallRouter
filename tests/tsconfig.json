@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "target": "esnext",
+    "module": "esnext",
     "moduleResolution": "bundler",
+    "sourceMap": false,
     "declaration": false,
     "removeComments": true,
     "strict": true,
@@ -12,12 +15,11 @@
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": false,
+    "noUnusedParameters": true,
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true
   },
-  "files":
-  [
-	"jDamnSmallRouter.test.ts"
+  "files": [
+    "src/jDamnSmallRouter.test.ts"
   ]
 }

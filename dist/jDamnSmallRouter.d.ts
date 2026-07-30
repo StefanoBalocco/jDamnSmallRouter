@@ -1,4 +1,3 @@
-type Undefinedable<T> = T | undefined;
 type Promisable<T> = T | Promise<T>;
 export type CheckAvailability = (routePath: string, hashPath: string, params?: {
     [key: string]: string;
@@ -20,20 +19,22 @@ declare class jDamnSmallRouter {
     private _regexDuplicatePathId;
     private _regexSearchVariables;
     private _routes;
-    private _routeSpecialFunction;
+    private _routeFunction403;
+    private _routeFunction404;
+    private _routeFunction500;
     private _routing;
     private _queue;
     private _characterClasses;
     private constructor();
-    static GetInstance(): jDamnSmallRouter;
+    static get instance(): jDamnSmallRouter;
     private static _checkRouteEquivalence;
-    RouteSpecialAdd(code: number, routeFunction: RouteFunction): boolean;
-    RouteAdd(path: string, routeFunction: RouteFunction, available?: CheckAvailability, routeFunction403?: RouteFunction): boolean;
-    RouteDel(path: string): boolean;
-    Trigger(path: Undefinedable<string>): Promise<boolean>;
-    Route(path: string): Promise<boolean>;
-    CheckHash(): Promise<boolean>;
+    routeSpecialAdd(code: number, routeFunction: RouteFunction): boolean;
+    routeAdd(path: string, routeFunction: RouteFunction, available?: CheckAvailability, routeFunction403?: RouteFunction): boolean;
+    routeDel(path: string): boolean;
+    trigger(path: string): void;
+    checkHash(): Promise<void>;
+    route(path: string): Promise<void>;
     private _getHash;
 }
-declare const _default: typeof jDamnSmallRouter.GetInstance;
+declare const _default: jDamnSmallRouter;
 export default _default;

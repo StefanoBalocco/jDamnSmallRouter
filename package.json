@@ -1,20 +1,24 @@
 {
-  "name": "jdamnsmallmrouter",
+  "name": "@stefanobalocco/jdamnsmallmrouter",
   "description": "Damn small hash router",
+  "version": "3.0.0",
   "type": "module",
-  "main": "jDamnSmallRouter.min.js",
-  "types": "jDamnSmallRouter.d.ts",
+  "types": "dist/jDamnSmallRouter.d.ts",
   "exports": {
     ".": {
-      "import": "./jDamnSmallRouter.min.js",
-      "types": "./jDamnSmallRouter.d.ts"
+      "types": "./dist/jDamnSmallRouter.d.ts",
+      "default": "./dist/jDamnSmallRouter.min.js"
     }
   },
+  "files": [
+    "dist/jDamnSmallRouter.js",
+    "dist/jDamnSmallRouter.min.js",
+    "dist/jDamnSmallRouter.d.ts"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/StefanoBalocco/jDamnSmallRouter.git"
   },
-  "version": "2.0.1",
   "keywords": [
     "hash router",
     "client-side router",
@@ -26,16 +30,20 @@
     "url": "https://github.com/StefanoBalocco/jDamnSmallRouter/issues"
   },
   "homepage": "https://github.com/StefanoBalocco/jDamnSmallRouter",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "node build.mjs library tests",
-    "build:library": "node build.mjs library",
-    "build:tests": "node build.mjs tests",
-    "run:tests": "npx ava '*.test.js' --verbose"
+    "build": "tsBuild all",
+    "build:library": "tsBuild library",
+    "build:tests": "tsBuild tests",
+    "tests": "c8 --include=src --include=dist --exclude-after-remap --per-file --reporter=text --reporter=lcov ava --serial 'tests/dist/*.test.js' --verbose"
   },
   "devDependencies": {
-    "ava": "~6",
-    "c8": "~10",
-    "terser": "^5",
-    "typescript": "^5"
+    "@stefanobalocco/tsbuild": "^1",
+    "@types/jsdom": "^28",
+    "ava": "^8",
+    "c8": "^12",
+    "jsdom": "^28"
   }
 }
